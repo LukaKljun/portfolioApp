@@ -13,6 +13,11 @@ A React Native mobile application for tracking your investment portfolio includi
 
 ### ➕ Add Transactions
 - **Multiple Asset Types**: Support for stocks, ETFs, and cryptocurrencies
+- **Smart Search**: Autocomplete search functionality with real-time suggestions
+- **Real-time Price Fetching**: Automatic price lookup from live APIs
+  - Stock prices via Twelve Data and Yahoo Finance APIs
+  - Crypto prices via CoinGecko API
+- **Manual Price Refresh**: Update prices with a single tap
 - **Transaction Management**: Add and delete investment transactions
 - **Spending Tracker**: Track total spending across all investments
 - **Transaction History**: View complete history of all transactions with details
@@ -29,6 +34,10 @@ A React Native mobile application for tracking your investment portfolio includi
 - **Navigation**: React Navigation (Bottom Tabs)
 - **Charts**: react-native-chart-kit
 - **Storage**: AsyncStorage
+- **APIs**: 
+  - CoinGecko API for cryptocurrency data
+  - Twelve Data API for stock/ETF data
+  - Yahoo Finance API (fallback)
 - **UI**: Custom dark theme with modern design
 
 ## Getting Started
@@ -76,10 +85,15 @@ npm run web      # For web browser
 ### Adding a Transaction
 1. Navigate to the "Add" tab
 2. Select the asset type (Stock, ETF, or Crypto)
-3. Enter the asset name (e.g., AAPL, BTC, VOO)
-4. Enter the amount of shares/units purchased
-5. Enter the price per share/unit
-6. Tap "Add Transaction"
+3. Start typing the asset name in the search box
+4. Select from the autocomplete suggestions
+5. The current price will be automatically fetched and populated
+6. Adjust the price manually if needed, or tap the 🔄 button to refresh
+7. Enter the amount of shares/units purchased
+8. Review the total investment preview
+9. Tap "Add Transaction"
+
+**Note**: The app uses free API tiers, so there may be rate limits. If automatic price fetch fails, you can always enter the price manually.
 
 ### Setting Investment Targets
 1. Navigate to the "Portfolio" tab
@@ -103,10 +117,13 @@ portfolioApp/
 │   ├── screens/
 │   │   ├── PortfolioDashboard.js   # Main portfolio view
 │   │   └── AddTransaction.js        # Add/manage transactions
+│   ├── components/
+│   │   └── SearchInput.js           # Autocomplete search component
 │   ├── context/
 │   │   └── PortfolioContext.js      # State management
 │   └── utils/
-│       └── theme.js                  # Dark theme configuration
+│       ├── theme.js                  # Dark theme configuration
+│       └── api.js                    # API service for prices
 ├── App.js                            # Main app component
 ├── package.json                      # Dependencies
 └── README.md                         # This file
@@ -115,16 +132,19 @@ portfolioApp/
 ## Features Roadmap
 
 Potential future enhancements:
-- [ ] Real-time price updates via API integration
+- [x] Real-time price updates via API integration
+- [x] Smart search with autocomplete
+- [ ] Price history charts for individual assets
 - [ ] Multiple portfolio support
 - [ ] Export data to CSV
 - [ ] Advanced analytics and performance metrics
 - [ ] Dividend tracking
 - [ ] Transaction categories and tags
-- [ ] Search and filter functionality
+- [ ] Search and filter in transaction history
 - [ ] Backup and restore functionality
 - [ ] Biometric authentication
 - [ ] Multi-currency support
+- [ ] Price alerts and notifications
 
 ## Contributing
 

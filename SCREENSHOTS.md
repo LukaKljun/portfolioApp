@@ -94,10 +94,10 @@ When "Edit" is tapped:
 │  ║ [📈 Stock] [📊 ETF] [₿ Crypto]║  │  <- Toggle buttons
 │  ║                               ║  │
 │  ║ Asset Name                    ║  │
-│  ║ [e.g., AAPL, BTC, VOO______] ║  │
+│  ║ [Search stocks, ETFs...____] ║  │  <- Search with autocomplete
 │  ║                               ║  │
-│  ║ Amount      Price ($)         ║  │
-│  ║ [0_____]    [0.00_______]    ║  │
+│  ║ Amount      Price ($)   🔄    ║  │
+│  ║ [0_____]    [0.00_______]    ║  │  <- Price refresh button
 │  ║                               ║  │
 │  ║ Total Investment: $0.00       ║  │
 │  ║                               ║  │
@@ -137,14 +137,45 @@ When "Edit" is tapped:
 
 ### Features
 - **Asset Type Selection**: Toggle between Stock, ETF, and Crypto with emoji icons
+- **Smart Search**: Real-time autocomplete search as you type
+  - Searches across stocks, ETFs, and cryptocurrencies
+  - Shows asset name, symbol, and type badge
+  - Filters results based on selected asset type
+- **Auto-fetch Prices**: Automatically fetches current prices when you select an asset
+- **Manual Price Refresh**: 🔄 button to update price at any time
 - **Form Fields**: 
-  - Asset Name (text input)
+  - Asset Name (search with autocomplete)
   - Amount (numeric input)
-  - Price per unit (numeric input)
+  - Price per unit (with auto-fetch and manual entry)
 - **Real-time Total**: Shows calculated total investment as you type
 - **Total Spending Card**: Cyan-colored summary of all spending
 - **Transaction History**: Scrollable list of all transactions
 - **Delete Functionality**: Each transaction has an ✕ button to delete
+
+### Search Experience
+```
+When typing "APP" in the search box:
+┌─────────────────────────────────────┐
+│ [APP_____________] 🔄               │
+├─────────────────────────────────────┤
+│ ╔═══════════════════════════════╗  │
+│ ║ AAPL                  [STOCK] ║  │
+│ ║ Apple Inc.                    ║  │
+│ ├───────────────────────────────┤  │
+│ ║ APPN                  [STOCK] ║  │
+│ ║ Appian Corporation            ║  │
+│ ├───────────────────────────────┤  │
+│ ║ APPF                   [ETF]  ║  │
+│ ║ AppFolio Inc.                 ║  │
+│ ╚═══════════════════════════════╝  │
+└─────────────────────────────────────┘
+```
+
+When you select an asset:
+1. Asset name is auto-filled
+2. Current price is fetched from API
+3. Alert shows: "Price Updated - Current price: $150.25"
+4. You can adjust amount and see total calculation
 
 ## Color Scheme (Dark Theme)
 
@@ -175,16 +206,25 @@ All data is stored locally using AsyncStorage:
 
 ## Key User Flows
 
-### Flow 1: Adding First Investment
+### Flow 1: Adding First Investment (with Search)
 1. Tap "Add" tab
 2. Select asset type (e.g., Stock)
-3. Enter asset name (e.g., "AAPL")
-4. Enter amount (e.g., "10")
-5. Enter price (e.g., "150")
-6. See total preview: "$1,500.00"
-7. Tap "Add Transaction"
-8. See success message
-9. Transaction appears in history below
+3. Start typing in search box (e.g., "AAPL")
+4. See real-time search suggestions appear
+5. Tap on "AAPL - Apple Inc." from suggestions
+6. Price auto-fetches: "$150.25"
+7. Enter amount (e.g., "10")
+8. See total preview: "$1,502.50"
+9. Tap "Add Transaction"
+10. See success message
+11. Transaction appears in history below
+
+### Flow 1b: Manual Price Entry
+1. Follow steps 1-3 above
+2. Tap on an asset from suggestions
+3. If price fetch fails, enter price manually
+4. Or tap 🔄 button to retry fetching price
+5. Continue with amount entry and submit
 
 ### Flow 2: Setting Investment Targets
 1. View Portfolio tab
@@ -209,7 +249,12 @@ All data is stored locally using AsyncStorage:
 - **Charts**: react-native-chart-kit
 - **Storage**: AsyncStorage
 - **State Management**: React Context API
+- **APIs**: 
+  - CoinGecko API for crypto prices and search
+  - Twelve Data API for stock/ETF data
+  - Yahoo Finance API (fallback for stocks)
 - **Styling**: StyleSheet API with custom dark theme
+- **Search**: Custom SearchInput component with real-time autocomplete
 
 ## Responsive Design
 
