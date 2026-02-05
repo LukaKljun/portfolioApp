@@ -1,7 +1,8 @@
 // API Service for fetching real-time prices and searching assets
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
-const TWELVE_DATA_API = 'https://api.twelvedata.com';
+const FINNHUB_API = 'https://finnhub.io/api/v1';
+const FINNHUB_API_KEY = 'ctcu9i1r01qk131iqvp0ctcu9i1r01qk131iqvpg'; // Free tier public key
 
 // Helper to add delay between requests
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -75,7 +76,7 @@ export const getCryptoPriceBySymbol = async (symbol) => {
 };
 
 /**
- * Search for stocks and ETFs
+ * Search for stocks and ETFs using Finnhub
  * @param {string} query - Search query (symbol or name)
  * @returns {Promise<Array>} - Array of stock/ETF results
  */
@@ -83,21 +84,21 @@ export const searchStock = async (query) => {
   if (!query || query.length < 1) return [];
   
   try {
-    // Using Twelve Data free API (requires no API key for basic search)
+    // Using Finnhub free API for symbol lookup
     const response = await fetch(
-      `${TWELVE_DATA_API}/symbol_search?symbol=${encodeURIComponent(query)}`
+      `${FINNHUB_API}/search?q=${encodeURIComponent(query)}&token=${FINNHUB_API_KEY}`
     );
     const data = await response.json();
     
-    if (data.data) {
-      return data.data.slice(0, 10).map(stock => ({
+    if (data.result && Array.isArray(data.result)) {
+      return data.result.slice(0, 10).map(stock => ({
         symbol: stock.symbol,
-        name: stock.instrument_name || stock.symbol,
-        type: stock.instrument_type === 'ETF' ? 'etf' : 'stock',
-        exchange: stock.exchange,
+        name: stock.description || stock.symbol,
+        type: stock.type === 'ETP' ? 'etf' : 'stock',
+        exchange: stock.displaySymbol,
       }));
     }
-    return [];
+    return getFallbackStocks(query);
   } catch (error) {
     console.error('Error searching stocks:', error);
     // Fallback to popular stocks if API fails
@@ -130,33 +131,28 @@ const getFallbackStocks = (query) => {
 };
 
 /**
- * Get current stock price (free API with limitations)
- * Note: Using 'demo' API key for development. For production use:
- * 1. Get a free API key from https://twelvedata.com/
- * 2. Set it as an environment variable
- * 3. Replace 'demo' with your API key
+ * Get current stock price using Finnhub
  * @param {string} symbol - Stock symbol (e.g., AAPL)
  * @returns {Promise<number|null>} - Current price in USD
  */
 export const getStockPrice = async (symbol) => {
   try {
-    // Using Twelve Data free tier (limited to demo data)
-    // TODO: Replace 'demo' with actual API key from environment variable
-    const apiKey = process.env.TWELVE_DATA_API_KEY || 'demo';
+    // Using Finnhub free tier for real-time quotes
     const response = await fetch(
-      `${TWELVE_DATA_API}/price?symbol=${symbol}&apikey=${apiKey}`
+      `${FINNHUB_API}/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`
     );
     const data = await response.json();
     
-    if (data.price) {
-      return parseFloat(data.price);
+    // Finnhub returns 'c' for current price
+    if (data.c && data.c > 0) {
+      return parseFloat(data.c);
     }
     
     // Fallback: Try Yahoo Finance alternative
     return await getStockPriceFallback(symbol);
   } catch (error) {
     console.error('Error fetching stock price:', error);
-    return null;
+    return await getStockPriceFallback(symbol);
   }
 };
 

@@ -27,6 +27,8 @@ export default function PortfolioDashboard() {
     getMonthlySpending,
     getYearlySpending,
     getAssetBreakdown,
+    cashBalance,
+    getTotalPortfolioValue,
   } = usePortfolio();
 
   const [showTargetModal, setShowTargetModal] = useState(false);
@@ -38,6 +40,7 @@ export default function PortfolioDashboard() {
   const monthlySpending = getMonthlySpending();
   const yearlySpending = getYearlySpending();
   const assetBreakdown = getAssetBreakdown();
+  const totalPortfolioValue = getTotalPortfolioValue();
 
   // Generate chart data from transactions
   const getChartData = () => {
@@ -108,8 +111,17 @@ export default function PortfolioDashboard() {
       {/* Portfolio Summary */}
       <View style={styles.summaryCard}>
         <Text style={styles.summaryTitle}>Total Portfolio Value</Text>
-        <Text style={styles.summaryValue}>${portfolioValue.toFixed(2)}</Text>
-        <Text style={styles.summarySubtext}>Total Invested: ${totalSpent.toFixed(2)}</Text>
+        <Text style={styles.summaryValue}>${totalPortfolioValue.toFixed(2)}</Text>
+        <View style={styles.summaryBreakdown}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Investments</Text>
+            <Text style={styles.summaryAmount}>${portfolioValue.toFixed(2)}</Text>
+          </View>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Cash</Text>
+            <Text style={styles.summaryAmount}>${cashBalance.toFixed(2)}</Text>
+          </View>
+        </View>
       </View>
 
       {/* Portfolio Chart */}
@@ -289,6 +301,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFFFFF',
     opacity: 0.8,
+  },
+  summaryBreakdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 16,
+    width: '100%',
+  },
+  summaryItem: {
+    alignItems: 'center',
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.8,
+    marginBottom: 4,
+  },
+  summaryAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   chartCard: {
     backgroundColor: darkTheme.surface,
