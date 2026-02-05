@@ -1,0 +1,31 @@
+export const darkTheme = {
+  background: '#121212',
+  surface: '#1E1E1E',
+  card: '#2C2C2C',
+  primary: '#BB86FC',
+  secondary: '#03DAC6',
+  accent: '#00BFA5',
+  error: '#CF6679',
+  text: '#FFFFFF',
+  textSecondary: '#B3B3B3',
+  border: '#3C3C3C',
+  success: '#4CAF50',
+  warning: '#FFC107',
+  info: '#2196F3',
+  chart: {
+    line: '#BB86FC',
+    gradient: ['#BB86FC', '#7B4FB8'],
+    grid: '#3C3C3C',
+    label: '#B3B3B3',
+  },
+  shadow: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+};
