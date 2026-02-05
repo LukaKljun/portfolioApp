@@ -8,6 +8,7 @@ export const PortfolioProvider = ({ children }) => {
   const [monthlyTarget, setMonthlyTarget] = useState(1000);
   const [yearlyTarget, setYearlyTarget] = useState(12000);
   const [cashBalance, setCashBalance] = useState(0);
+  const [cashTransactions, setCashTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Load data from AsyncStorage
@@ -21,6 +22,7 @@ export const PortfolioProvider = ({ children }) => {
       const storedMonthlyTarget = await AsyncStorage.getItem('monthlyTarget');
       const storedYearlyTarget = await AsyncStorage.getItem('yearlyTarget');
       const storedCashBalance = await AsyncStorage.getItem('cashBalance');
+      const storedCashTransactions = await AsyncStorage.getItem('cashTransactions');
 
       if (storedTransactions) {
         setTransactions(JSON.parse(storedTransactions));
@@ -33,6 +35,9 @@ export const PortfolioProvider = ({ children }) => {
       }
       if (storedCashBalance) {
         setCashBalance(parseFloat(storedCashBalance));
+      }
+      if (storedCashTransactions) {
+        setCashTransactions(JSON.parse(storedCashTransactions));
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -152,8 +157,21 @@ export const PortfolioProvider = ({ children }) => {
         console.warn('Cannot set negative cash balance');
         return;
       }
+      
+      // Record cash transaction for history
+      const cashTransaction = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        amount: amount,
+        balance: newBalance,
+        type: amount > 0 ? 'deposit' : 'withdraw',
+      };
+      const updatedCashTransactions = [...cashTransactions, cashTransaction];
+      
       await AsyncStorage.setItem('cashBalance', newBalance.toString());
+      await AsyncStorage.setItem('cashTransactions', JSON.stringify(updatedCashTransactions));
       setCashBalance(newBalance);
+      setCashTransactions(updatedCashTransactions);
     } catch (error) {
       console.error('Error updating cash balance:', error);
     }
@@ -166,8 +184,21 @@ export const PortfolioProvider = ({ children }) => {
         console.warn('Cannot set negative cash balance');
         return;
       }
+      
+      // Record cash transaction for history
+      const cashTransaction = {
+        id: Date.now().toString(),
+        date: new Date().toISOString(),
+        amount: amount - cashBalance,
+        balance: amount,
+        type: 'set_balance',
+      };
+      const updatedCashTransactions = [...cashTransactions, cashTransaction];
+      
       await AsyncStorage.setItem('cashBalance', amount.toString());
+      await AsyncStorage.setItem('cashTransactions', JSON.stringify(updatedCashTransactions));
       setCashBalance(amount);
+      setCashTransactions(updatedCashTransactions);
     } catch (error) {
       console.error('Error setting cash balance:', error);
     }
@@ -193,6 +224,7 @@ export const PortfolioProvider = ({ children }) => {
         getYearlySpending,
         getAssetBreakdown,
         cashBalance,
+        cashTransactions,
         updateCashBalance,
         setCashBalanceDirect,
         getTotalPortfolioValue,

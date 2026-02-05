@@ -28,12 +28,14 @@ export default function PortfolioDashboard() {
     getYearlySpending,
     getAssetBreakdown,
     cashBalance,
+    cashTransactions,
     getTotalPortfolioValue,
   } = usePortfolio();
 
   const [showTargetModal, setShowTargetModal] = useState(false);
   const [tempMonthlyTarget, setTempMonthlyTarget] = useState(monthlyTarget.toString());
   const [tempYearlyTarget, setTempYearlyTarget] = useState(yearlyTarget.toString());
+  const [graphFilter, setGraphFilter] = useState('all');
 
   const portfolioValue = getPortfolioValue();
   const totalSpent = getTotalSpent();
@@ -44,7 +46,23 @@ export default function PortfolioDashboard() {
 
   // Generate chart data from transactions
   const getChartData = () => {
-    if (transactions.length === 0) {
+    // Filter based on selected graph filter
+    let filteredTransactions = transactions;
+    let includeCash = false;
+    
+    if (graphFilter === 'cash') {
+      // Show only cash balance over time
+      filteredTransactions = [];
+      includeCash = true;
+    } else if (graphFilter !== 'all') {
+      // Filter by specific asset type
+      filteredTransactions = transactions.filter(t => t.assetType === graphFilter);
+    } else {
+      // Include everything
+      includeCash = true;
+    }
+
+    if (filteredTransactions.length === 0 && (!includeCash || cashTransactions.length === 0)) {
       return {
         labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
         datasets: [{
@@ -53,24 +71,60 @@ export default function PortfolioDashboard() {
       };
     }
 
-    // Group transactions by month
-    const monthlyData = {};
-    let runningTotal = 0;
+    // Combine transactions and cash transactions into a timeline
+    const timelineData = {};
+    let runningInvestmentTotal = 0;
+    let runningCashTotal = 0;
 
-    transactions
+    // Process investment transactions
+    filteredTransactions
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .forEach(transaction => {
         const date = new Date(transaction.date);
         const monthKey = `${date.getMonth() + 1}/${date.getFullYear()}`;
         
         if (transaction.type === 'buy') {
-          runningTotal += transaction.amount * transaction.price;
+          runningInvestmentTotal += transaction.amount * transaction.price;
         }
-        monthlyData[monthKey] = runningTotal;
+        
+        if (!timelineData[monthKey]) {
+          timelineData[monthKey] = { investment: 0, cash: runningCashTotal };
+        }
+        timelineData[monthKey].investment = runningInvestmentTotal;
       });
 
-    const labels = Object.keys(monthlyData).slice(-6);
-    const data = Object.values(monthlyData).slice(-6);
+    // Process cash transactions if included
+    if (includeCash && cashTransactions.length > 0) {
+      cashTransactions
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .forEach(cashTx => {
+          const date = new Date(cashTx.date);
+          const monthKey = `${date.getMonth() + 1}/${date.getFullYear()}`;
+          
+          runningCashTotal = cashTx.balance;
+          
+          if (!timelineData[monthKey]) {
+            timelineData[monthKey] = { investment: runningInvestmentTotal, cash: runningCashTotal };
+          } else {
+            timelineData[monthKey].cash = runningCashTotal;
+          }
+        });
+    }
+
+    // Calculate totals based on filter
+    const labels = Object.keys(timelineData).slice(-6);
+    let data;
+    
+    if (graphFilter === 'cash') {
+      // Show only cash
+      data = labels.map(key => timelineData[key].cash);
+    } else if (graphFilter === 'all') {
+      // Show combined total
+      data = labels.map(key => timelineData[key].investment + timelineData[key].cash);
+    } else {
+      // Show only investments
+      data = labels.map(key => timelineData[key].investment);
+    }
 
     // Ensure we always have at least 2 data points
     if (data.length === 0) {
@@ -127,6 +181,51 @@ export default function PortfolioDashboard() {
       {/* Portfolio Chart */}
       <View style={styles.chartCard}>
         <Text style={styles.cardTitle}>Portfolio Growth</Text>
+        
+        {/* Graph Filter Buttons */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[styles.filterButton, graphFilter === 'all' && styles.filterButtonActive]}
+            onPress={() => setGraphFilter('all')}
+          >
+            <Text style={[styles.filterButtonText, graphFilter === 'all' && styles.filterButtonTextActive]}>
+              All
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, graphFilter === 'cash' && styles.filterButtonActive]}
+            onPress={() => setGraphFilter('cash')}
+          >
+            <Text style={[styles.filterButtonText, graphFilter === 'cash' && styles.filterButtonTextActive]}>
+              Cash
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, graphFilter === 'stock' && styles.filterButtonActive]}
+            onPress={() => setGraphFilter('stock')}
+          >
+            <Text style={[styles.filterButtonText, graphFilter === 'stock' && styles.filterButtonTextActive]}>
+              Stocks
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, graphFilter === 'etf' && styles.filterButtonActive]}
+            onPress={() => setGraphFilter('etf')}
+          >
+            <Text style={[styles.filterButtonText, graphFilter === 'etf' && styles.filterButtonTextActive]}>
+              ETFs
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterButton, graphFilter === 'crypto' && styles.filterButtonActive]}
+            onPress={() => setGraphFilter('crypto')}
+          >
+            <Text style={[styles.filterButtonText, graphFilter === 'crypto' && styles.filterButtonTextActive]}>
+              Crypto
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
         <LineChart
           data={chartData}
           width={width - 40}
@@ -329,6 +428,34 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     ...darkTheme.shadow,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 6,
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: darkTheme.card,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: darkTheme.border,
+  },
+  filterButtonActive: {
+    backgroundColor: darkTheme.primary,
+    borderColor: darkTheme.primary,
+  },
+  filterButtonText: {
+    fontSize: 12,
+    color: darkTheme.textSecondary,
+    fontWeight: '600',
+  },
+  filterButtonTextActive: {
+    color: '#FFFFFF',
   },
   chart: {
     marginVertical: 8,
