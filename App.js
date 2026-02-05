@@ -58,33 +58,76 @@ export default function App() {
         <Tab.Navigator
           tabBar={props => <CustomTabBar {...props} />}
           screenOptions={{
+<<<<<<< HEAD
             headerShown: false, // Hide default header for custom implementation in screens
             tabBarActiveTintColor: darkTheme.primary,
             tabBarInactiveTintColor: darkTheme.textSecondary,
+=======
+            tabBarStyle: {
+              backgroundColor: darkTheme.surface,
+              borderTopColor: darkTheme.border,
+              borderTopWidth: 1,
+              paddingBottom: 8,
+              paddingTop: 8,
+              height: 60,
+              elevation: 0,
+              shadowOpacity: 0,
+            },
+            tabBarActiveTintColor: darkTheme.primaryLight,
+            tabBarInactiveTintColor: darkTheme.textMuted,
+            headerStyle: {
+              backgroundColor: darkTheme.surface,
+              borderBottomColor: darkTheme.border,
+              borderBottomWidth: 1,
+              elevation: 0,
+              shadowOpacity: 0,
+            },
+            headerTintColor: darkTheme.text,
+            headerTitleStyle: {
+              fontWeight: '700',
+              fontSize: 18,
+              letterSpacing: -0.5,
+            },
+>>>>>>> d374d3737045f6c7df66bc043c40fc4103075061
           }}
         >
           <Tab.Screen
             name="Portfolio"
             component={PortfolioDashboard}
             options={{
+<<<<<<< HEAD
               tabBarIcon: ({ focused, color, size }) => (
                 <TabBarIcon name="📊" color={color} size={size} />
               ),
+=======
+              tabBarIcon: ({ color, size }) => (
+                <TabBarIcon name="💼" color={color} size={size} />
+              ),
+              headerTitle: 'Portfolio Overview',
+>>>>>>> d374d3737045f6c7df66bc043c40fc4103075061
             }}
           />
           <Tab.Screen
             name="Holdings"
             component={Holdings}
             options={{
+<<<<<<< HEAD
               tabBarIcon: ({ focused, color, size }) => (
                 <TabBarIcon name="📈" color={color} size={size} />
               ),
+=======
+              tabBarIcon: ({ color, size }) => (
+                <TabBarIcon name="📊" color={color} size={size} />
+              ),
+              headerTitle: 'My Holdings',
+>>>>>>> d374d3737045f6c7df66bc043c40fc4103075061
             }}
           />
           <Tab.Screen
             name="Add"
             component={AddTransaction}
             options={{
+<<<<<<< HEAD
               tabBarIcon: ({ focused, color, size }) => (
                 <TabBarIcon name="➕" color={color} size={size} />
               ),
@@ -97,6 +140,12 @@ export default function App() {
               tabBarIcon: ({ focused, color, size }) => (
                 <TabBarIcon name="🎯" color={color} size={size} />
               ),
+=======
+              tabBarIcon: ({ color, size }) => (
+                <TabBarIcon name="✨" color={color} size={size} />
+              ),
+              headerTitle: 'New Transaction',
+>>>>>>> d374d3737045f6c7df66bc043c40fc4103075061
             }}
           />
           <Tab.Screen
