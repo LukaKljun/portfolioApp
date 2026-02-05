@@ -24,6 +24,8 @@ export default function PortfolioDashboard() {
     updateYearlyTarget,
     getPortfolioValue,
     getTotalSpent,
+    getMonthlySpending,
+    getYearlySpending,
     getAssetBreakdown,
   } = usePortfolio();
 
@@ -33,6 +35,8 @@ export default function PortfolioDashboard() {
 
   const portfolioValue = getPortfolioValue();
   const totalSpent = getTotalSpent();
+  const monthlySpending = getMonthlySpending();
+  const yearlySpending = getYearlySpending();
   const assetBreakdown = getAssetBreakdown();
 
   // Generate chart data from transactions
@@ -170,12 +174,12 @@ export default function PortfolioDashboard() {
             <View
               style={[
                 styles.targetProgress,
-                { width: `${Math.min(calculateProgress(portfolioValue, monthlyTarget), 100)}%` },
+                { width: `${Math.min(calculateProgress(monthlySpending, monthlyTarget), 100)}%` },
               ]}
             />
           </View>
           <Text style={styles.targetText}>
-            ${portfolioValue.toFixed(0)} / ${monthlyTarget.toFixed(0)}
+            ${monthlySpending.toFixed(0)} / ${monthlyTarget.toFixed(0)}
           </Text>
         </View>
 
@@ -186,12 +190,12 @@ export default function PortfolioDashboard() {
             <View
               style={[
                 styles.targetProgress,
-                { width: `${Math.min(calculateProgress(portfolioValue, yearlyTarget), 100)}%` },
+                { width: `${Math.min(calculateProgress(yearlySpending, yearlyTarget), 100)}%` },
               ]}
             />
           </View>
           <Text style={styles.targetText}>
-            ${portfolioValue.toFixed(0)} / ${yearlyTarget.toFixed(0)}
+            ${yearlySpending.toFixed(0)} / ${yearlyTarget.toFixed(0)}
           </Text>
         </View>
       </View>

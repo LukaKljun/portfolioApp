@@ -349,20 +349,20 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     fontSize: 14,
-    color: '#000',
-    opacity: 0.7,
+    color: darkTheme.text,
+    opacity: 0.9,
     marginBottom: 8,
   },
   summaryValue: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#000',
+    color: darkTheme.text,
     marginBottom: 4,
   },
   summarySubtext: {
     fontSize: 14,
-    color: '#000',
-    opacity: 0.6,
+    color: darkTheme.text,
+    opacity: 0.8,
   },
   historyCard: {
     backgroundColor: darkTheme.surface,

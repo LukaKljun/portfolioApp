@@ -87,9 +87,39 @@ export const PortfolioProvider = ({ children }) => {
     }, 0);
   };
 
+  // Alias for getPortfolioValue - currently identical, but kept separate for future
+  // differentiation when sell transactions or actual market values are implemented
   const getTotalSpent = () => {
+    return getPortfolioValue();
+  };
+
+  const getMonthlySpending = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
     return transactions.reduce((total, transaction) => {
-      if (transaction.type === 'buy') {
+      const transactionDate = new Date(transaction.date);
+      if (
+        transaction.type === 'buy' &&
+        transactionDate.getMonth() === currentMonth &&
+        transactionDate.getFullYear() === currentYear
+      ) {
+        return total + (transaction.amount * transaction.price);
+      }
+      return total;
+    }, 0);
+  };
+
+  const getYearlySpending = () => {
+    const currentYear = new Date().getFullYear();
+    
+    return transactions.reduce((total, transaction) => {
+      const transactionDate = new Date(transaction.date);
+      if (
+        transaction.type === 'buy' &&
+        transactionDate.getFullYear() === currentYear
+      ) {
         return total + (transaction.amount * transaction.price);
       }
       return total;
@@ -121,6 +151,8 @@ export const PortfolioProvider = ({ children }) => {
         updateYearlyTarget,
         getPortfolioValue,
         getTotalSpent,
+        getMonthlySpending,
+        getYearlySpending,
         getAssetBreakdown,
         loading,
       }}
