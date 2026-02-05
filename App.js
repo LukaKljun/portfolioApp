@@ -41,11 +41,11 @@ export default function App() {
             },
             bold: {
               fontFamily: 'System',
-              fontWeight: '700',
+              fontWeight: '600',
             },
             heavy: {
               fontFamily: 'System',
-              fontWeight: '900',
+              fontWeight: '700',
             },
           },
         }}
