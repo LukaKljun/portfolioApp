@@ -131,14 +131,20 @@ const getFallbackStocks = (query) => {
 
 /**
  * Get current stock price (free API with limitations)
+ * Note: Using 'demo' API key for development. For production use:
+ * 1. Get a free API key from https://twelvedata.com/
+ * 2. Set it as an environment variable
+ * 3. Replace 'demo' with your API key
  * @param {string} symbol - Stock symbol (e.g., AAPL)
  * @returns {Promise<number|null>} - Current price in USD
  */
 export const getStockPrice = async (symbol) => {
   try {
-    // Using Twelve Data free tier
+    // Using Twelve Data free tier (limited to demo data)
+    // TODO: Replace 'demo' with actual API key from environment variable
+    const apiKey = process.env.TWELVE_DATA_API_KEY || 'demo';
     const response = await fetch(
-      `${TWELVE_DATA_API}/price?symbol=${symbol}&apikey=demo`
+      `${TWELVE_DATA_API}/price?symbol=${symbol}&apikey=${apiKey}`
     );
     const data = await response.json();
     

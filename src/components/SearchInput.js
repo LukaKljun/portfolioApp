@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { darkTheme } from '../utils/theme';
+import { searchAssets as searchAssetsAPI } from '../utils/api';
 
 export default function SearchInput({
   value,
@@ -38,9 +39,7 @@ export default function SearchInput({
     onSearchStart?.();
 
     try {
-      // Dynamic import to avoid issues
-      const api = await import('../utils/api');
-      const results = await api.searchAssets(searchQuery, assetType);
+      const results = await searchAssetsAPI(searchQuery, assetType);
       
       // Filter by asset type
       const filteredResults = assetType !== 'all' 

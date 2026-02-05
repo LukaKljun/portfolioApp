@@ -46,12 +46,15 @@ A React Native mobile application for tracking your investment portfolio includi
 - Node.js (v14 or higher)
 - npm or yarn
 - Expo CLI (installed automatically)
+- (Optional) API keys for enhanced functionality:
+  - Twelve Data API key for reliable stock prices: https://twelvedata.com/
+  - Set as environment variable: `TWELVE_DATA_API_KEY`
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/LukaKljun/portfolioApp.git
+git clone https://github.com/YourUsername/portfolioApp.git
 cd portfolioApp
 ```
 

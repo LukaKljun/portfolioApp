@@ -45,11 +45,7 @@ export default function AddTransaction() {
       
       if (currentPrice) {
         setPrice(currentPrice.toString());
-        Alert.alert(
-          'Price Updated',
-          `Current price: $${currentPrice.toFixed(2)}`,
-          [{ text: 'OK' }]
-        );
+        // Success - price was auto-filled
       } else {
         Alert.alert(
           'Price Unavailable',
