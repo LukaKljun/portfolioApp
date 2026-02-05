@@ -11,17 +11,18 @@ import {
 import { usePortfolio } from '../context/PortfolioContext';
 import { darkTheme } from '../utils/theme';
 import { getAssetPrice } from '../utils/api';
+import Card from '../components/Card';
 
 export default function Holdings() {
   const { transactions } = usePortfolio();
+  const [filter, setFilter] = useState('all'); // all, stock, crypto
   const [holdings, setHoldings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    // Only calculate holdings on mount
     calculateHoldings();
-  }, []); // Empty dependency array - only run on mount
+  }, [filter]);
 
   const calculateHoldings = async (isRefresh = false) => {
     if (isRefresh) {
@@ -31,29 +32,37 @@ export default function Holdings() {
     }
 
     try {
-      // Group transactions by asset
       const holdingsMap = {};
       
       transactions.forEach(transaction => {
-        const key = `${transaction.assetName}-${transaction.assetType}`;
+        const safeAssetType = transaction.assetType || 'stock';
+
+        if (filter !== 'all') {
+          if (filter === 'crypto') {
+            if (safeAssetType !== 'crypto' && safeAssetType !== 'eth') return;
+          } else if (safeAssetType !== filter) {
+            return;
+          }
+        }
+
+        const key = `${transaction.assetName}-${safeAssetType}`;
         
         if (!holdingsMap[key]) {
           holdingsMap[key] = {
             assetName: transaction.assetName,
-            assetType: transaction.assetType,
+            assetType: safeAssetType,
             shares: 0,
             totalCost: 0,
-            coinId: transaction.coinId, // For crypto
+            coinId: transaction.coinId, 
           };
         }
         
         if (transaction.type === 'buy') {
-          holdingsMap[key].shares += transaction.amount;
-          holdingsMap[key].totalCost += transaction.amount * transaction.price;
+          holdingsMap[key].shares += (Number(transaction.amount) || 0);
+          holdingsMap[key].totalCost += (Number(transaction.amount) || 0) * (Number(transaction.price) || 0);
         }
       });
 
-      // Convert to array and fetch current prices with rate limiting
       const holdingsArray = [];
       const filteredHoldings = Object.values(holdingsMap).filter(h => h.shares > 0);
       
@@ -61,14 +70,13 @@ export default function Holdings() {
         const holding = filteredHoldings[i];
         
         try {
-          // Add delay between requests to avoid rate limits (60/min = 1 per second)
-          if (i > 0) {
-            await new Promise(resolve => setTimeout(resolve, 1100));
-          }
+           const lookupType = holding.assetType === 'eth' ? 'crypto' : holding.assetType;
+
+          if (i > 0) await new Promise(resolve => setTimeout(resolve, 500)); 
           
           const currentPrice = await getAssetPrice(
             holding.assetName,
-            holding.assetType,
+            lookupType,
             holding.coinId
           );
           
@@ -101,7 +109,6 @@ export default function Holdings() {
         }
       }
 
-      // Sort by current value descending
       holdingsArray.sort((a, b) => b.currentValue - a.currentValue);
       setHoldings(holdingsArray);
     } catch (error) {
@@ -116,72 +123,42 @@ export default function Holdings() {
     calculateHoldings(true);
   };
 
-  const renderHolding = (holding) => {
+
+  const renderHoldingRow = (holding) => {
     const isPositive = holding.gain >= 0;
 
     return (
-      <View key={`${holding.assetName}-${holding.assetType}`} style={styles.holdingCard}>
-        <View style={styles.holdingHeader}>
-          <View style={styles.holdingInfo}>
-            <Text style={styles.assetName}>{holding.assetName}</Text>
-            <View style={styles.assetMeta}>
-              <Text style={styles.assetTypeBadge}>{holding.assetType.toUpperCase()}</Text>
-              <Text style={styles.sharesText}>{holding.shares.toFixed(4)} shares</Text>
+      <TouchableOpacity key={`${holding.assetName}-${holding.assetType}`} activeOpacity={0.7}>
+        <View style={styles.tickerRow}>
+          <View style={styles.tickerLeft}>
+             <View style={styles.iconPlaceholder}>
+                <Text style={styles.iconText}>{holding.assetName.substring(0,2).toUpperCase()}</Text>
+             </View>
+             <View>
+                <Text style={styles.tickerSymbol}>{holding.assetName}</Text>
+                <Text style={styles.tickerShares}>{(holding.shares || 0).toFixed(4)} shares</Text>
+             </View>
+          </View>
+
+          <View style={styles.tickerRight}>
+            <Text style={styles.tickerPrice}>${holding.currentPrice.toFixed(2)}</Text>
+            <View style={[styles.changeBadge, isPositive ? styles.badgeSuccess : styles.badgeError]}>
+              <Text style={[styles.changeText, isPositive ? styles.textSuccess : styles.textError]}>
+                 {isPositive ? '+' : ''}{holding.gainPercent.toFixed(2)}%
+              </Text>
             </View>
           </View>
-          {!holding.priceLoaded && (
-            <Text style={styles.estimatedBadge}>EST</Text>
-          )}
         </View>
-
-        <View style={styles.priceSection}>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Current Price:</Text>
-            <Text style={styles.priceValue}>${holding.currentPrice.toFixed(2)}</Text>
-          </View>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>Avg Cost:</Text>
-            <Text style={styles.priceValue}>${holding.avgCost.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.valueSection}>
-          <View style={styles.valueRow}>
-            <Text style={styles.valueLabel}>Current Value:</Text>
-            <Text style={styles.currentValue}>${holding.currentValue.toFixed(2)}</Text>
-          </View>
-          <View style={styles.valueRow}>
-            <Text style={styles.valueLabel}>Total Cost:</Text>
-            <Text style={styles.totalCost}>${holding.totalCost.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        <View style={styles.gainSection}>
-          <View style={[styles.gainCard, isPositive ? styles.gainPositive : styles.gainNegative]}>
-            <Text style={styles.gainLabel}>Total Gain/Loss</Text>
-            <Text style={[styles.gainValue, isPositive ? styles.gainValuePositive : styles.gainValueNegative]}>
-              {isPositive ? '+' : ''}${holding.gain.toFixed(2)}
-            </Text>
-            <Text style={[styles.gainPercent, isPositive ? styles.gainValuePositive : styles.gainValueNegative]}>
-              {isPositive ? '+' : ''}{holding.gainPercent.toFixed(2)}%
-            </Text>
-          </View>
-        </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   const totalCurrentValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
-  const totalCost = holdings.reduce((sum, h) => sum + h.totalCost, 0);
-  const totalGain = totalCurrentValue - totalCost;
-  const totalGainPercent = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
-  const isPositive = totalGain >= 0;
 
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color={darkTheme.primary} />
-        <Text style={styles.loadingText}>Loading holdings...</Text>
       </View>
     );
   }
@@ -193,41 +170,23 @@ export default function Holdings() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={darkTheme.primary} />
       }
     >
-      {/* Summary Card */}
-      {holdings.length > 0 && (
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Total Holdings Value</Text>
-          <Text style={styles.summaryValue}>${totalCurrentValue.toFixed(2)}</Text>
-          <View style={[styles.summaryGain, isPositive ? styles.gainPositive : styles.gainNegative]}>
-            <Text style={[styles.summaryGainText, isPositive ? styles.gainValuePositive : styles.gainValueNegative]}>
-              {isPositive ? '+' : ''}${totalGain.toFixed(2)} ({isPositive ? '+' : ''}{totalGainPercent.toFixed(2)}%)
-            </Text>
-          </View>
-          <Text style={styles.summarySubtext}>Total Cost: ${totalCost.toFixed(2)}</Text>
-        </View>
-      )}
+      <View style={styles.header}>
+         <Text style={styles.headerTitle}>Holdings</Text>
+         <Text style={styles.headerSubtitle}>${totalCurrentValue.toFixed(2)}</Text>
+      </View>
 
-      {/* Holdings List */}
-      <View style={styles.holdingsContainer}>
-        <View style={styles.headerRow}>
-          <Text style={styles.sectionTitle}>Your Holdings</Text>
-          <TouchableOpacity onPress={onRefresh} disabled={refreshing}>
-            <Text style={styles.refreshText}>🔄 Refresh</Text>
-          </TouchableOpacity>
+      <View style={styles.listContainer}>
+        <View style={styles.listHeader}>
+           <Text style={styles.label}>Asset</Text>
+           <Text style={styles.label}>Price / 24h</Text>
         </View>
-
         {holdings.length > 0 ? (
-          holdings.map(renderHolding)
+          holdings.map(renderHoldingRow)
         ) : (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No holdings yet</Text>
-            <Text style={styles.emptySubtext}>Add your first transaction to see your holdings here</Text>
           </View>
         )}
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>💡 Pull down to refresh prices</Text>
       </View>
     </ScrollView>
   );
@@ -241,215 +200,111 @@ const styles = StyleSheet.create({
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  loadingText: {
-    color: darkTheme.textSecondary,
-    marginTop: 16,
-    fontSize: 14,
-  },
-  summaryCard: {
-    backgroundColor: darkTheme.primary,
-    margin: 20,
-    padding: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    ...darkTheme.shadow,
-  },
-  summaryTitle: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    marginBottom: 8,
-  },
-  summaryValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  summaryGain: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  summaryGainText: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  summarySubtext: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.8,
-  },
-  holdingsContainer: {
-    margin: 20,
-    marginTop: 0,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: darkTheme.text,
-  },
-  refreshText: {
-    fontSize: 14,
-    color: darkTheme.primary,
-    fontWeight: '600',
-  },
-  holdingCard: {
-    backgroundColor: darkTheme.surface,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    ...darkTheme.shadow,
-  },
-  holdingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: darkTheme.border,
-  },
-  holdingInfo: {
     flex: 1,
   },
-  assetName: {
-    fontSize: 20,
+  header: {
+    padding: 24,
+    paddingTop: 60,
+    backgroundColor: darkTheme.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: darkTheme.border,
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 28,
     fontWeight: 'bold',
     color: darkTheme.text,
-    marginBottom: 6,
   },
-  assetMeta: {
+  headerSubtitle: {
+    fontSize: 16,
+    color: darkTheme.textSecondary,
+    marginTop: 4,
+  },
+  listContainer: {
+    paddingHorizontal: 0,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 12,
+    color: darkTheme.textSecondary,
+    textTransform: 'uppercase',
+  },
+  tickerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: darkTheme.border,
+    backgroundColor: darkTheme.background,
+  },
+  tickerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  assetTypeBadge: {
-    fontSize: 10,
-    color: darkTheme.primary,
-    fontWeight: '600',
-    letterSpacing: 1,
+  iconPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: darkTheme.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
-  sharesText: {
+  iconText: {
+    color: darkTheme.text,
+    fontWeight: 'bold',
+  },
+  tickerSymbol: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: darkTheme.text,
+  },
+  tickerShares: {
     fontSize: 12,
     color: darkTheme.textSecondary,
   },
-  estimatedBadge: {
-    fontSize: 10,
-    color: darkTheme.textSecondary,
-    backgroundColor: darkTheme.card,
+  tickerRight: {
+    alignItems: 'flex-end',
+  },
+  tickerPrice: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: darkTheme.text,
+    marginBottom: 4,
+  },
+  changeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
-    fontWeight: '600',
   },
-  priceSection: {
-    marginBottom: 12,
+  badgeSuccess: {
+     backgroundColor: 'rgba(0, 192, 135, 0.15)',
   },
-  priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
+  badgeError: {
+     backgroundColor: 'rgba(246, 70, 93, 0.15)',
   },
-  priceLabel: {
-    fontSize: 14,
-    color: darkTheme.textSecondary,
-  },
-  priceValue: {
-    fontSize: 14,
-    color: darkTheme.text,
-    fontWeight: '600',
-  },
-  valueSection: {
-    marginBottom: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: darkTheme.border,
-  },
-  valueRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  valueLabel: {
-    fontSize: 14,
-    color: darkTheme.textSecondary,
-  },
-  currentValue: {
-    fontSize: 16,
-    color: darkTheme.text,
-    fontWeight: 'bold',
-  },
-  totalCost: {
-    fontSize: 14,
-    color: darkTheme.text,
-    fontWeight: '600',
-  },
-  gainSection: {
-    marginTop: 12,
-  },
-  gainCard: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  gainPositive: {
-    backgroundColor: 'rgba(0, 200, 83, 0.1)',
-  },
-  gainNegative: {
-    backgroundColor: 'rgba(255, 82, 82, 0.1)',
-  },
-  gainLabel: {
+  changeText: {
     fontSize: 12,
-    color: darkTheme.textSecondary,
-    marginBottom: 4,
-  },
-  gainValue: {
-    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 2,
   },
-  gainPercent: {
-    fontSize: 14,
-    fontWeight: '600',
+  textSuccess: {
+    color: darkTheme.success,
   },
-  gainValuePositive: {
-    color: '#00C853',
-  },
-  gainValueNegative: {
-    color: '#FF5252',
+  textError: {
+    color: darkTheme.error,
   },
   emptyContainer: {
-    backgroundColor: darkTheme.surface,
     padding: 40,
-    borderRadius: 12,
     alignItems: 'center',
   },
   emptyText: {
-    fontSize: 18,
-    color: darkTheme.text,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: darkTheme.textSecondary,
-    textAlign: 'center',
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 12,
     color: darkTheme.textSecondary,
   },
 });

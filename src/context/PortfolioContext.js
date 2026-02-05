@@ -5,6 +5,7 @@ const PortfolioContext = createContext();
 
 export const PortfolioProvider = ({ children }) => {
   const [transactions, setTransactions] = useState([]);
+  const [goals, setGoals] = useState([]);
   const [monthlyTarget, setMonthlyTarget] = useState(1000);
   const [yearlyTarget, setYearlyTarget] = useState(12000);
   const [cashBalance, setCashBalance] = useState(0);
@@ -19,6 +20,7 @@ export const PortfolioProvider = ({ children }) => {
   const loadData = async () => {
     try {
       const storedTransactions = await AsyncStorage.getItem('transactions');
+      const storedGoals = await AsyncStorage.getItem('goals');
       const storedMonthlyTarget = await AsyncStorage.getItem('monthlyTarget');
       const storedYearlyTarget = await AsyncStorage.getItem('yearlyTarget');
       const storedCashBalance = await AsyncStorage.getItem('cashBalance');
@@ -26,6 +28,9 @@ export const PortfolioProvider = ({ children }) => {
 
       if (storedTransactions) {
         setTransactions(JSON.parse(storedTransactions));
+      }
+      if (storedGoals) {
+        setGoals(JSON.parse(storedGoals));
       }
       if (storedMonthlyTarget) {
         setMonthlyTarget(parseFloat(storedMonthlyTarget));
@@ -55,11 +60,23 @@ export const PortfolioProvider = ({ children }) => {
     }
   };
 
+  const saveGoals = async (newGoals) => {
+    try {
+      await AsyncStorage.setItem('goals', JSON.stringify(newGoals));
+      setGoals(newGoals);
+    } catch (error) {
+      console.error('Error saving goals:', error);
+    }
+  };
+
   const addTransaction = async (transaction) => {
     const newTransaction = {
       ...transaction,
       id: Date.now().toString(),
       date: new Date().toISOString(),
+      // Ensure numeric values
+      amount: parseFloat(transaction.amount),
+      price: parseFloat(transaction.price),
     };
     const updatedTransactions = [...transactions, newTransaction];
     await saveTransactions(updatedTransactions);
@@ -68,6 +85,30 @@ export const PortfolioProvider = ({ children }) => {
   const deleteTransaction = async (id) => {
     const updatedTransactions = transactions.filter(t => t.id !== id);
     await saveTransactions(updatedTransactions);
+  };
+
+  const addGoal = async (goal) => {
+    const newGoal = {
+      ...goal,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      currentAmount: parseFloat(goal.currentAmount) || 0,
+      targetAmount: parseFloat(goal.targetAmount),
+    };
+    const updatedGoals = [...goals, newGoal];
+    await saveGoals(updatedGoals);
+  };
+
+  const deleteGoal = async (id) => {
+    const updatedGoals = goals.filter(g => g.id !== id);
+    await saveGoals(updatedGoals);
+  };
+
+  const updateGoal = async (id, updates) => {
+    const updatedGoals = goals.map(g => 
+      g.id === id ? { ...g, ...updates } : g
+    );
+    await saveGoals(updatedGoals);
   };
 
   const updateMonthlyTarget = async (target) => {
@@ -140,10 +181,11 @@ export const PortfolioProvider = ({ children }) => {
     const breakdown = {};
     transactions.forEach(transaction => {
       if (transaction.type === 'buy') {
-        if (!breakdown[transaction.assetType]) {
-          breakdown[transaction.assetType] = 0;
+        const type = transaction.assetType || 'Other'; // Fallback
+        if (!breakdown[type]) {
+          breakdown[type] = 0;
         }
-        breakdown[transaction.assetType] += transaction.amount * transaction.price;
+        breakdown[type] += transaction.amount * transaction.price;
       }
     });
     return breakdown;
@@ -214,6 +256,10 @@ export const PortfolioProvider = ({ children }) => {
         transactions,
         addTransaction,
         deleteTransaction,
+        goals,
+        addGoal,
+        deleteGoal,
+        updateGoal,
         monthlyTarget,
         yearlyTarget,
         updateMonthlyTarget,

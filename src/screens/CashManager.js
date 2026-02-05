@@ -304,10 +304,10 @@ const styles = StyleSheet.create({
     ...darkTheme.shadow,
   },
   depositButton: {
-    backgroundColor: '#00C853',
+    backgroundColor: darkTheme.success,
   },
   withdrawButton: {
-    backgroundColor: '#FF5252',
+    backgroundColor: darkTheme.error,
   },
   setBalanceButton: {
     backgroundColor: darkTheme.primary,

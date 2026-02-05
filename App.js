@@ -7,8 +7,10 @@ import { PortfolioProvider } from './src/context/PortfolioContext';
 import PortfolioDashboard from './src/screens/PortfolioDashboard';
 import Holdings from './src/screens/Holdings';
 import AddTransaction from './src/screens/AddTransaction';
+import GoalsScreen from './src/screens/GoalsScreen';
 import CashManager from './src/screens/CashManager';
 import { darkTheme } from './src/utils/theme';
+import CustomTabBar from './src/components/CustomTabBar';
 
 // Suppress the pointerEvents deprecation warning from React Native Web
 // This is a known issue with React Navigation and will be fixed in future versions
@@ -30,7 +32,7 @@ export default function App() {
             card: darkTheme.surface,
             text: darkTheme.text,
             border: darkTheme.border,
-            notification: darkTheme.secondary,
+            notification: darkTheme.error,
           },
           fonts: {
             regular: {
@@ -54,66 +56,56 @@ export default function App() {
       >
         <StatusBar style="light" />
         <Tab.Navigator
+          tabBar={props => <CustomTabBar {...props} />}
           screenOptions={{
-            tabBarStyle: {
-              backgroundColor: darkTheme.surface,
-              borderTopColor: darkTheme.border,
-              borderTopWidth: 1,
-              paddingBottom: 8,
-              paddingTop: 8,
-              height: 60,
-            },
+            headerShown: false, // Hide default header for custom implementation in screens
             tabBarActiveTintColor: darkTheme.primary,
             tabBarInactiveTintColor: darkTheme.textSecondary,
-            headerStyle: {
-              backgroundColor: darkTheme.surface,
-              borderBottomColor: darkTheme.border,
-              borderBottomWidth: 1,
-            },
-            headerTintColor: darkTheme.text,
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
           }}
         >
           <Tab.Screen
             name="Portfolio"
             component={PortfolioDashboard}
             options={{
-              tabBarIcon: ({ color, size }) => (
+              tabBarIcon: ({ focused, color, size }) => (
                 <TabBarIcon name="📊" color={color} size={size} />
               ),
-              headerTitle: 'My Portfolio',
             }}
           />
           <Tab.Screen
             name="Holdings"
             component={Holdings}
             options={{
-              tabBarIcon: ({ color, size }) => (
+              tabBarIcon: ({ focused, color, size }) => (
                 <TabBarIcon name="📈" color={color} size={size} />
               ),
-              headerTitle: 'Holdings',
             }}
           />
           <Tab.Screen
             name="Add"
             component={AddTransaction}
             options={{
-              tabBarIcon: ({ color, size }) => (
+              tabBarIcon: ({ focused, color, size }) => (
                 <TabBarIcon name="➕" color={color} size={size} />
               ),
-              headerTitle: 'Add Transaction',
+            }}
+          />
+          <Tab.Screen
+            name="Goals"
+            component={GoalsScreen}
+            options={{
+              tabBarIcon: ({ focused, color, size }) => (
+                <TabBarIcon name="🎯" color={color} size={size} />
+              ),
             }}
           />
           <Tab.Screen
             name="Cash"
             component={CashManager}
             options={{
-              tabBarIcon: ({ color, size }) => (
+              tabBarIcon: ({ focused, color, size }) => (
                 <TabBarIcon name="💰" color={color} size={size} />
               ),
-              headerTitle: 'Cash Manager',
             }}
           />
         </Tab.Navigator>

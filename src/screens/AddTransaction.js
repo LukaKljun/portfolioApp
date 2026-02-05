@@ -3,16 +3,19 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import { usePortfolio } from '../context/PortfolioContext';
 import { darkTheme } from '../utils/theme';
-import SearchInput from '../components/SearchInput';
 import { getAssetPrice } from '../utils/api';
+import Card from '../components/Card';
+import SearchInput from '../components/SearchInput';
 
 export default function AddTransaction() {
   const { addTransaction, transactions, deleteTransaction, getTotalSpent } = usePortfolio();
@@ -24,291 +27,176 @@ export default function AddTransaction() {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [loadingPrice, setLoadingPrice] = useState(false);
 
+  // Constants
   const assetTypes = [
-    { id: 'stock', label: 'Stock', icon: '📈' },
-    { id: 'etf', label: 'ETF', icon: '📊' },
-    { id: 'crypto', label: 'Crypto', icon: '₿' },
+    { id: 'stock', label: 'STOCKS', icon: '📈' },
+    { id: 'crypto', label: 'CRYPTO', icon: '₿' },
   ];
+
+  const handleTypeSelect = (typeId) => {
+    setAssetType(typeId);
+    // Reset fields when switching type key aspects
+    if (assetType !== typeId) {
+       setAssetName('');
+       setSelectedAsset(null);
+       setPrice('');
+    }
+  };
 
   const handleAssetSelect = async (asset) => {
     setSelectedAsset(asset);
     setAssetName(asset.symbol || asset.name);
     
-    // Auto-fetch price for the selected asset
     setLoadingPrice(true);
     try {
+      // Handle ETH/Crypto logic mapping if needed, but asset.type usually sufficient
+      const searchType = assetType === 'eth' ? 'crypto' : assetType;
+      
       const currentPrice = await getAssetPrice(
         asset.symbol || asset.name,
-        asset.type,
-        asset.id // CoinGecko ID for crypto
+        searchType,
+        asset.id 
       );
       
       if (currentPrice) {
         setPrice(currentPrice.toString());
-        // Success - price was auto-filled
-      } else {
-        Alert.alert(
-          'Price Unavailable',
-          'Could not fetch current price. Please enter manually.',
-          [{ text: 'OK' }]
-        );
       }
     } catch (error) {
       console.error('Error fetching price:', error);
-      Alert.alert(
-        'Error',
-        'Failed to fetch price. Please enter manually.',
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setLoadingPrice(false);
-    }
-  };
-
-  const handleRefreshPrice = async () => {
-    if (!assetName.trim()) {
-      Alert.alert('Error', 'Please enter or select an asset first');
-      return;
-    }
-
-    setLoadingPrice(true);
-    try {
-      const currentPrice = await getAssetPrice(
-        assetName,
-        assetType,
-        selectedAsset?.id
-      );
-      
-      if (currentPrice) {
-        setPrice(currentPrice.toString());
-        Alert.alert('Success', `Price updated: $${currentPrice.toFixed(2)}`);
-      } else {
-        Alert.alert('Error', 'Could not fetch current price');
-      }
-    } catch (error) {
-      console.error('Error refreshing price:', error);
-      Alert.alert('Error', 'Failed to fetch price');
     } finally {
       setLoadingPrice(false);
     }
   };
 
   const handleAddTransaction = async () => {
-    if (!assetName.trim()) {
-      Alert.alert('Error', 'Please enter asset name');
-      return;
-    }
-    if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert('Error', 'Please enter valid amount');
-      return;
-    }
-    if (!price || parseFloat(price) <= 0) {
-      Alert.alert('Error', 'Please enter valid price');
+    if (!assetName.trim() || !amount || !price) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     const transaction = {
-      assetName: assetName.trim(),
+      assetName: assetName.trim().toUpperCase(),
       assetType,
       amount: parseFloat(amount),
       price: parseFloat(price),
-      type: 'buy',
-      coinId: selectedAsset?.id, // Save coinId for crypto
+      type: 'buy', // Default to buy for simple version
+      coinId: selectedAsset?.id, 
+      date: new Date().toISOString(),
     };
 
     await addTransaction(transaction);
 
-    // Reset form
+    // Reset
     setAssetName('');
     setAmount('');
     setPrice('');
     setSelectedAsset(null);
-
-    Alert.alert('Success', 'Transaction added successfully!');
+    Alert.alert('Success', 'Transaction added');
   };
 
   const handleDeleteTransaction = (id) => {
     Alert.alert(
-      'Delete Transaction',
-      'Are you sure you want to delete this transaction?',
+      'Delete',
+      'Remove this transaction?',
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteTransaction(id),
-        },
+        { text: 'Delete', style: 'destructive', onPress: () => deleteTransaction(id) }
       ]
     );
   };
 
-  const renderTransaction = ({ item }) => {
-    const totalValue = item.amount * item.price;
-    const date = new Date(item.date);
-    const formattedDate = date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-
-    return (
-      <View style={styles.transactionCard}>
-        <View style={styles.transactionHeader}>
-          <View style={styles.transactionInfo}>
-            <Text style={styles.assetName}>{item.assetName}</Text>
-            <Text style={styles.assetTypeBadge}>{item.assetType.toUpperCase()}</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => handleDeleteTransaction(item.id)}
-            style={styles.deleteButton}
-          >
-            <Text style={styles.deleteButtonText}>✕</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.transactionDetails}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Amount:</Text>
-            <Text style={styles.detailValue}>{item.amount}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Price:</Text>
-            <Text style={styles.detailValue}>${item.price.toFixed(2)}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Total:</Text>
-            <Text style={[styles.detailValue, styles.totalValue]}>
-              ${totalValue.toFixed(2)}
-            </Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Date:</Text>
-            <Text style={styles.detailValue}>{formattedDate}</Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  const totalSpent = getTotalSpent();
-
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* Add Transaction Form */}
-        <View style={styles.formCard}>
-          <Text style={styles.sectionTitle}>Add New Transaction</Text>
+      <ScrollView contentContainerStyle={styles.contentContainer}>
+        <View style={styles.header}>
+           <Text style={styles.headerTitle}>Add Transaction</Text>
+        </View>
 
-          <Text style={styles.label}>Asset Type</Text>
-          <View style={styles.assetTypeContainer}>
-            {assetTypes.map((type) => (
-              <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.assetTypeButton,
-                  assetType === type.id && styles.assetTypeButtonActive,
-                ]}
-                onPress={() => setAssetType(type.id)}
-              >
-                <Text style={styles.assetTypeIcon}>{type.icon}</Text>
-                <Text
-                  style={[
-                    styles.assetTypeLabel,
-                    assetType === type.id && styles.assetTypeLabelActive,
-                  ]}
-                >
-                  {type.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.label}>Asset Name</Text>
-          <SearchInput
-            value={assetName}
-            onSelect={handleAssetSelect}
-            assetType={assetType}
-            placeholder={`Search ${assetType === 'stock' ? 'stocks' : assetType === 'etf' ? 'ETFs' : 'crypto'}...`}
-          />
-
-          <View style={styles.row}>
-            <View style={styles.halfInput}>
-              <Text style={styles.label}>Amount</Text>
-              <TextInput
-                style={styles.input}
-                value={amount}
-                onChangeText={setAmount}
-                placeholder="0"
-                keyboardType="decimal-pad"
-                placeholderTextColor={darkTheme.textSecondary}
-              />
-            </View>
-
-            <View style={styles.halfInput}>
-              <Text style={styles.label}>Price ($)</Text>
-              <View style={styles.priceInputContainer}>
-                <TextInput
-                  style={[styles.input, styles.priceInput]}
-                  value={price}
-                  onChangeText={setPrice}
-                  placeholder="0.00"
-                  keyboardType="decimal-pad"
-                  placeholderTextColor={darkTheme.textSecondary}
-                  editable={!loadingPrice}
-                />
+        <Card style={styles.formCard}>
+           {/* Asset Type Tabs */}
+           <View style={styles.tabContainer}>
+              {assetTypes.map((t) => (
                 <TouchableOpacity
-                  style={styles.refreshButton}
-                  onPress={handleRefreshPrice}
-                  disabled={loadingPrice}
+                  key={t.id}
+                  style={[styles.tab, assetType === t.id && styles.activeTab]}
+                  onPress={() => handleTypeSelect(t.id)}
                 >
-                  {loadingPrice ? (
-                    <ActivityIndicator size="small" color={darkTheme.primary} />
-                  ) : (
-                    <Text style={styles.refreshButtonText}>🔄</Text>
-                  )}
+                  <Text style={[styles.tabText, assetType === t.id && styles.activeTabText]}>
+                    {t.label}
+                  </Text>
                 </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+              ))}
+           </View>
 
-          {amount && price && (
-            <View style={styles.totalPreview}>
-              <Text style={styles.totalPreviewLabel}>Total Investment:</Text>
-              <Text style={styles.totalPreviewValue}>
-                ${(parseFloat(amount) * parseFloat(price)).toFixed(2)}
-              </Text>
-            </View>
-          )}
+           {/* Asset Name */}
+           <Text style={styles.label}>Asset Name</Text>
+           <SearchInput
+              value={assetName}
+              onSelect={handleAssetSelect}
+              assetType={assetType}
+              placeholder={assetType === 'stock' ? 'Apple, Tesla...' : 'Bitcoin, Ethereum...'}
+           />
 
-          <TouchableOpacity style={styles.addButton} onPress={handleAddTransaction}>
-            <Text style={styles.addButtonText}>Add Transaction</Text>
-          </TouchableOpacity>
+           <View style={styles.row}>
+             <View style={styles.col}>
+               <Text style={styles.label}>Amount</Text>
+               <TextInput
+                 style={styles.input}
+                 value={amount}
+                 onChangeText={setAmount}
+                 placeholder="0.00"
+                 keyboardType="numeric"
+                 placeholderTextColor={darkTheme.textSecondary}
+               />
+             </View>
+             <View style={styles.col}>
+               <Text style={styles.label}>Price</Text>
+               <View style={styles.priceContainer}>
+                 <TextInput
+                   style={[styles.input, styles.priceInput]}
+                   value={price}
+                   onChangeText={setPrice}
+                   placeholder="0.00"
+                   keyboardType="numeric"
+                   placeholderTextColor={darkTheme.textSecondary}
+                 />
+                 {loadingPrice && (
+                   <View style={styles.loader}>
+                      <ActivityIndicator size="small" color={darkTheme.primary} />
+                   </View>
+                 )}
+               </View>
+             </View>
+           </View>
+
+           <TouchableOpacity style={styles.addButton} onPress={handleAddTransaction}>
+             <Text style={styles.addButtonText}>Add Investment</Text>
+           </TouchableOpacity>
+        </Card>
+
+        {/* History */}
+        <Text style={styles.sectionTitle}>Recent History</Text>
+        <View style={styles.historyList}>
+           {transactions.slice().reverse().slice(0, 5).map((t) => (
+             <Card key={t.id} style={styles.historyCard}>
+                <View style={styles.historyRow}>
+                   <View>
+                      <Text style={styles.historySymbol}>{t.assetName}</Text>
+                      <Text style={styles.historyDate}>{new Date(t.date).toLocaleDateString()}</Text>
+                   </View>
+                   <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={styles.historyValue}>
+                        ${(t.amount * t.price).toFixed(2)}
+                      </Text>
+                      <TouchableOpacity onPress={() => handleDeleteTransaction(t.id)}>
+                         <Text style={styles.deleteLink}>Delete</Text>
+                      </TouchableOpacity>
+                   </View>
+                </View>
+             </Card>
+           ))}
         </View>
 
-        {/* Spending Summary */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Total Spending</Text>
-          <Text style={styles.summaryValue}>${totalSpent.toFixed(2)}</Text>
-          <Text style={styles.summarySubtext}>
-            {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
-          </Text>
-        </View>
-
-        {/* Transaction History */}
-        <View style={styles.historyCard}>
-          <Text style={styles.sectionTitle}>Transaction History</Text>
-          {transactions.length > 0 ? (
-            transactions
-              .slice()
-              .reverse()
-              .map((item) => (
-                <View key={item.id}>{renderTransaction({ item })}</View>
-              ))
-          ) : (
-            <Text style={styles.emptyText}>
-              No transactions yet. Add your first investment above!
-            </Text>
-          )}
-        </View>
       </ScrollView>
     </View>
   );
@@ -319,231 +207,129 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: darkTheme.background,
   },
-  scrollView: {
-    flex: 1,
-  },
-  formCard: {
-    backgroundColor: darkTheme.surface,
-    margin: 20,
+  contentContainer: {
     padding: 20,
-    borderRadius: 16,
-    ...darkTheme.shadow,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
-  sectionTitle: {
-    fontSize: 20,
+  header: {
+    marginBottom: 24,
+  },
+  headerTitle: {
+    fontSize: 28,
     fontWeight: 'bold',
     color: darkTheme.text,
-    marginBottom: 20,
   },
-  label: {
-    fontSize: 14,
-    color: darkTheme.textSecondary,
-    marginBottom: 8,
-    marginTop: 12,
+  formCard: {
+    marginBottom: 32,
+    padding: 20,
   },
-  assetTypeContainer: {
+  tabContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 20,
+    backgroundColor: darkTheme.background,
+    borderRadius: 8,
+    padding: 4,
   },
-  assetTypeButton: {
+  tab: {
     flex: 1,
-    backgroundColor: darkTheme.card,
-    padding: 16,
-    borderRadius: 12,
+    paddingVertical: 10,
     alignItems: 'center',
-    marginHorizontal: 4,
-    borderWidth: 2,
-    borderColor: darkTheme.card,
+    borderRadius: 6,
   },
-  assetTypeButtonActive: {
-    borderColor: darkTheme.primary,
-    backgroundColor: darkTheme.surface,
+  activeTab: {
+    backgroundColor: darkTheme.primary,
   },
-  assetTypeIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  assetTypeLabel: {
+  tabText: {
     fontSize: 12,
     color: darkTheme.textSecondary,
     fontWeight: '600',
   },
-  assetTypeLabelActive: {
-    color: darkTheme.primary,
+  activeTabText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
-  input: {
-    backgroundColor: darkTheme.card,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: darkTheme.text,
-    borderWidth: 1,
-    borderColor: darkTheme.border,
+  label: {
+    fontSize: 12,
+    color: darkTheme.textSecondary,
+    marginBottom: 8,
+    textTransform: 'uppercase',
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 12,
   },
-  halfInput: {
+  col: {
     flex: 1,
-    marginHorizontal: 4,
   },
-  priceInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  priceInput: {
-    flex: 1,
-    marginRight: 8,
-  },
-  refreshButton: {
-    width: 44,
-    height: 44,
-    backgroundColor: darkTheme.card,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+  input: {
+    backgroundColor: darkTheme.background,
     borderWidth: 1,
     borderColor: darkTheme.border,
-  },
-  refreshButtonText: {
-    fontSize: 20,
-  },
-  totalPreview: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: darkTheme.card,
-    padding: 16,
     borderRadius: 8,
-    marginTop: 16,
-  },
-  totalPreviewLabel: {
+    padding: 14,
     fontSize: 16,
-    color: darkTheme.textSecondary,
+    color: darkTheme.text,
   },
-  totalPreviewValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: darkTheme.primary,
+  priceContainer: {
+    position: 'relative',
+  },
+  priceInput: {
+    paddingRight: 40,
+  },
+  loader: {
+    position: 'absolute',
+    right: 12,
+    top: 14,
   },
   addButton: {
     backgroundColor: darkTheme.primary,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
-    ...darkTheme.shadow,
+    marginTop: 24,
   },
   addButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
     fontSize: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: darkTheme.text,
+    marginBottom: 16,
   },
-  summaryCard: {
-    backgroundColor: darkTheme.secondary,
-    margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    ...darkTheme.shadow,
-  },
-  summaryTitle: {
-    fontSize: 14,
-    color: darkTheme.text,
-    opacity: 0.9,
-    marginBottom: 8,
-  },
-  summaryValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: darkTheme.text,
-    marginBottom: 4,
-  },
-  summarySubtext: {
-    fontSize: 14,
-    color: darkTheme.text,
-    opacity: 0.8,
+  historyList: {
+    gap: 12,
   },
   historyCard: {
-    backgroundColor: darkTheme.surface,
-    margin: 20,
-    marginTop: 0,
-    padding: 20,
-    borderRadius: 16,
-    ...darkTheme.shadow,
-    marginBottom: 40,
-  },
-  transactionCard: {
-    backgroundColor: darkTheme.card,
     padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: darkTheme.primary,
   },
-  transactionHeader: {
+  historyRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
   },
-  transactionInfo: {
-    flex: 1,
-  },
-  assetName: {
-    fontSize: 18,
+  historySymbol: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: darkTheme.text,
-    marginBottom: 4,
   },
-  assetTypeBadge: {
-    fontSize: 10,
-    color: darkTheme.primary,
-    fontWeight: '600',
-    letterSpacing: 1,
-  },
-  deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: darkTheme.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteButtonText: {
-    fontSize: 18,
-    color: darkTheme.error,
-  },
-  transactionDetails: {
-    borderTopWidth: 1,
-    borderTopColor: darkTheme.border,
-    paddingTop: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  detailLabel: {
-    fontSize: 14,
+  historyDate: {
+    fontSize: 12,
     color: darkTheme.textSecondary,
+    marginTop: 2,
   },
-  detailValue: {
-    fontSize: 14,
-    color: darkTheme.text,
-    fontWeight: '600',
-  },
-  totalValue: {
-    color: darkTheme.primary,
+  historyValue: {
     fontSize: 16,
+    fontWeight: '600',
+    color: darkTheme.text,
   },
-  emptyText: {
-    fontSize: 14,
-    color: darkTheme.textSecondary,
-    textAlign: 'center',
-    paddingVertical: 20,
+  deleteLink: {
+    fontSize: 12,
+    color: darkTheme.error,
+    marginTop: 4,
   },
 });
