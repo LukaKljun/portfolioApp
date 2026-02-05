@@ -104,9 +104,10 @@ export default function PortfolioDashboard() {
           runningCashTotal = cashTx.balance;
           
           if (!timelineData[monthKey]) {
-            timelineData[monthKey] = { investment: runningInvestmentTotal, cash: 0 };
+            timelineData[monthKey] = { investment: runningInvestmentTotal, cash: runningCashTotal };
+          } else {
+            timelineData[monthKey].cash = runningCashTotal;
           }
-          timelineData[monthKey].cash = runningCashTotal;
         });
     }
 
