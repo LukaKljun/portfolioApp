@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
-  FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { usePortfolio } from '../context/PortfolioContext';
 import { darkTheme } from '../utils/theme';
+import SearchInput from '../components/SearchInput';
+import { getAssetPrice } from '../utils/api';
 
 export default function AddTransaction() {
   const { addTransaction, transactions, deleteTransaction, getTotalSpent } = usePortfolio();
@@ -19,12 +21,81 @@ export default function AddTransaction() {
   const [assetType, setAssetType] = useState('stock');
   const [amount, setAmount] = useState('');
   const [price, setPrice] = useState('');
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
 
   const assetTypes = [
     { id: 'stock', label: 'Stock', icon: '📈' },
     { id: 'etf', label: 'ETF', icon: '📊' },
     { id: 'crypto', label: 'Crypto', icon: '₿' },
   ];
+
+  const handleAssetSelect = async (asset) => {
+    setSelectedAsset(asset);
+    setAssetName(asset.symbol || asset.name);
+    
+    // Auto-fetch price for the selected asset
+    setLoadingPrice(true);
+    try {
+      const currentPrice = await getAssetPrice(
+        asset.symbol || asset.name,
+        asset.type,
+        asset.id // CoinGecko ID for crypto
+      );
+      
+      if (currentPrice) {
+        setPrice(currentPrice.toString());
+        Alert.alert(
+          'Price Updated',
+          `Current price: $${currentPrice.toFixed(2)}`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Price Unavailable',
+          'Could not fetch current price. Please enter manually.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching price:', error);
+      Alert.alert(
+        'Error',
+        'Failed to fetch price. Please enter manually.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setLoadingPrice(false);
+    }
+  };
+
+  const handleRefreshPrice = async () => {
+    if (!assetName.trim()) {
+      Alert.alert('Error', 'Please enter or select an asset first');
+      return;
+    }
+
+    setLoadingPrice(true);
+    try {
+      const currentPrice = await getAssetPrice(
+        assetName,
+        assetType,
+        selectedAsset?.id
+      );
+      
+      if (currentPrice) {
+        setPrice(currentPrice.toString());
+        Alert.alert('Success', `Price updated: $${currentPrice.toFixed(2)}`);
+      } else {
+        Alert.alert('Error', 'Could not fetch current price');
+      }
+    } catch (error) {
+      console.error('Error refreshing price:', error);
+      Alert.alert('Error', 'Failed to fetch price');
+    } finally {
+      setLoadingPrice(false);
+    }
+  };
 
   const handleAddTransaction = async () => {
     if (!assetName.trim()) {
@@ -54,6 +125,7 @@ export default function AddTransaction() {
     setAssetName('');
     setAmount('');
     setPrice('');
+    setSelectedAsset(null);
 
     Alert.alert('Success', 'Transaction added successfully!');
   };
@@ -154,12 +226,11 @@ export default function AddTransaction() {
           </View>
 
           <Text style={styles.label}>Asset Name</Text>
-          <TextInput
-            style={styles.input}
+          <SearchInput
             value={assetName}
-            onChangeText={setAssetName}
-            placeholder="e.g., AAPL, BTC, VOO"
-            placeholderTextColor={darkTheme.textSecondary}
+            onSelect={handleAssetSelect}
+            assetType={assetType}
+            placeholder={`Search ${assetType === 'stock' ? 'stocks' : assetType === 'etf' ? 'ETFs' : 'crypto'}...`}
           />
 
           <View style={styles.row}>
@@ -177,14 +248,28 @@ export default function AddTransaction() {
 
             <View style={styles.halfInput}>
               <Text style={styles.label}>Price ($)</Text>
-              <TextInput
-                style={styles.input}
-                value={price}
-                onChangeText={setPrice}
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-                placeholderTextColor={darkTheme.textSecondary}
-              />
+              <View style={styles.priceInputContainer}>
+                <TextInput
+                  style={[styles.input, styles.priceInput]}
+                  value={price}
+                  onChangeText={setPrice}
+                  placeholder="0.00"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={darkTheme.textSecondary}
+                  editable={!loadingPrice}
+                />
+                <TouchableOpacity
+                  style={styles.refreshButton}
+                  onPress={handleRefreshPrice}
+                  disabled={loadingPrice}
+                >
+                  {loadingPrice ? (
+                    <ActivityIndicator size="small" color={darkTheme.primary} />
+                  ) : (
+                    <Text style={styles.refreshButtonText}>🔄</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -306,6 +391,27 @@ const styles = StyleSheet.create({
   halfInput: {
     flex: 1,
     marginHorizontal: 4,
+  },
+  priceInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  priceInput: {
+    flex: 1,
+    marginRight: 8,
+  },
+  refreshButton: {
+    width: 44,
+    height: 44,
+    backgroundColor: darkTheme.card,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: darkTheme.border,
+  },
+  refreshButtonText: {
+    fontSize: 20,
   },
   totalPreview: {
     flexDirection: 'row',
