@@ -62,17 +62,23 @@ export default function App() {
               paddingBottom: 8,
               paddingTop: 8,
               height: 60,
+              elevation: 0,
+              shadowOpacity: 0,
             },
-            tabBarActiveTintColor: darkTheme.primary,
-            tabBarInactiveTintColor: darkTheme.textSecondary,
+            tabBarActiveTintColor: darkTheme.primaryLight,
+            tabBarInactiveTintColor: darkTheme.textMuted,
             headerStyle: {
               backgroundColor: darkTheme.surface,
               borderBottomColor: darkTheme.border,
               borderBottomWidth: 1,
+              elevation: 0,
+              shadowOpacity: 0,
             },
             headerTintColor: darkTheme.text,
             headerTitleStyle: {
-              fontWeight: 'bold',
+              fontWeight: '700',
+              fontSize: 18,
+              letterSpacing: -0.5,
             },
           }}
         >
@@ -81,9 +87,9 @@ export default function App() {
             component={PortfolioDashboard}
             options={{
               tabBarIcon: ({ color, size }) => (
-                <TabBarIcon name="📊" color={color} size={size} />
+                <TabBarIcon name="💼" color={color} size={size} />
               ),
-              headerTitle: 'My Portfolio',
+              headerTitle: 'Portfolio Overview',
             }}
           />
           <Tab.Screen
@@ -91,9 +97,9 @@ export default function App() {
             component={Holdings}
             options={{
               tabBarIcon: ({ color, size }) => (
-                <TabBarIcon name="📈" color={color} size={size} />
+                <TabBarIcon name="📊" color={color} size={size} />
               ),
-              headerTitle: 'Holdings',
+              headerTitle: 'My Holdings',
             }}
           />
           <Tab.Screen
@@ -101,9 +107,9 @@ export default function App() {
             component={AddTransaction}
             options={{
               tabBarIcon: ({ color, size }) => (
-                <TabBarIcon name="➕" color={color} size={size} />
+                <TabBarIcon name="✨" color={color} size={size} />
               ),
-              headerTitle: 'Add Transaction',
+              headerTitle: 'New Transaction',
             }}
           />
           <Tab.Screen

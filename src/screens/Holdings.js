@@ -180,7 +180,7 @@ export default function Holdings() {
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={darkTheme.primary} />
+        <ActivityIndicator size="large" color={darkTheme.primaryLight} />
         <Text style={styles.loadingText}>Loading holdings...</Text>
       </View>
     );
@@ -190,7 +190,7 @@ export default function Holdings() {
     <ScrollView
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={darkTheme.primary} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={darkTheme.primaryLight} />
       }
     >
       {/* Summary Card */}
@@ -246,41 +246,49 @@ const styles = StyleSheet.create({
     color: darkTheme.textSecondary,
     marginTop: 16,
     fontSize: 14,
+    fontWeight: '500',
   },
   summaryCard: {
     backgroundColor: darkTheme.primary,
     margin: 20,
-    padding: 24,
-    borderRadius: 16,
+    padding: 28,
+    borderRadius: 20,
     alignItems: 'center',
     ...darkTheme.shadow,
+    borderLeftWidth: 4,
+    borderLeftColor: darkTheme.secondary,
   },
   summaryTitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#FFFFFF',
-    opacity: 0.9,
-    marginBottom: 8,
+    opacity: 0.85,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    fontWeight: '600',
   },
   summaryValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
+    fontSize: 42,
+    fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 12,
+    letterSpacing: -1,
   },
   summaryGain: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 12,
   },
   summaryGainText: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   summarySubtext: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#FFFFFF',
-    opacity: 0.8,
+    opacity: 0.75,
+    fontWeight: '500',
   },
   holdingsContainer: {
     margin: 20,
@@ -293,21 +301,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: darkTheme.text,
+    letterSpacing: -0.5,
   },
   refreshText: {
-    fontSize: 14,
-    color: darkTheme.primary,
-    fontWeight: '600',
+    fontSize: 13,
+    color: darkTheme.secondary,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   holdingCard: {
     backgroundColor: darkTheme.surface,
-    padding: 16,
-    borderRadius: 12,
+    padding: 20,
+    borderRadius: 20,
     marginBottom: 16,
     ...darkTheme.shadow,
+    borderWidth: 1,
+    borderColor: darkTheme.border,
   },
   holdingHeader: {
     flexDirection: 'row',
@@ -322,10 +335,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   assetName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: darkTheme.text,
-    marginBottom: 6,
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   assetMeta: {
     flexDirection: 'row',
@@ -333,23 +347,25 @@ const styles = StyleSheet.create({
   },
   assetTypeBadge: {
     fontSize: 10,
-    color: darkTheme.primary,
-    fontWeight: '600',
-    letterSpacing: 1,
+    color: darkTheme.primaryLight,
+    fontWeight: '700',
+    letterSpacing: 1.2,
     marginRight: 12,
   },
   sharesText: {
     fontSize: 12,
     color: darkTheme.textSecondary,
+    fontWeight: '500',
   },
   estimatedBadge: {
     fontSize: 10,
-    color: darkTheme.textSecondary,
+    color: darkTheme.textMuted,
     backgroundColor: darkTheme.card,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    fontWeight: '600',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   priceSection: {
     marginBottom: 12,
@@ -360,13 +376,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   priceLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: darkTheme.textSecondary,
+    fontWeight: '500',
   },
   priceValue: {
     fontSize: 14,
     color: darkTheme.text,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   valueSection: {
     marginBottom: 12,
@@ -380,16 +397,17 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   valueLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: darkTheme.textSecondary,
+    fontWeight: '500',
   },
   currentValue: {
-    fontSize: 16,
+    fontSize: 17,
     color: darkTheme.text,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   totalCost: {
-    fontSize: 14,
+    fontSize: 15,
     color: darkTheme.text,
     fontWeight: '600',
   },
@@ -397,52 +415,63 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   gainCard: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  gainPositive: {
-    backgroundColor: 'rgba(0, 200, 83, 0.1)',
-  },
-  gainNegative: {
-    backgroundColor: 'rgba(255, 82, 82, 0.1)',
-  },
-  gainLabel: {
-    fontSize: 12,
-    color: darkTheme.textSecondary,
-    marginBottom: 4,
-  },
-  gainValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  gainPercent: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  gainValuePositive: {
-    color: '#00C853',
-  },
-  gainValueNegative: {
-    color: '#FF5252',
-  },
-  emptyContainer: {
-    backgroundColor: darkTheme.surface,
-    padding: 40,
+    padding: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
-  emptyText: {
-    fontSize: 18,
-    color: darkTheme.text,
+  gainPositive: {
+    backgroundColor: 'rgba(6, 214, 160, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(6, 214, 160, 0.3)',
+  },
+  gainNegative: {
+    backgroundColor: 'rgba(239, 71, 111, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 71, 111, 0.3)',
+  },
+  gainLabel: {
+    fontSize: 11,
+    color: darkTheme.textSecondary,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
     fontWeight: '600',
-    marginBottom: 8,
+  },
+  gainValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  gainPercent: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  gainValuePositive: {
+    color: darkTheme.success,
+  },
+  gainValueNegative: {
+    color: darkTheme.error,
+  },
+  emptyContainer: {
+    backgroundColor: darkTheme.surface,
+    padding: 48,
+    borderRadius: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: darkTheme.border,
+  },
+  emptyText: {
+    fontSize: 20,
+    color: darkTheme.text,
+    fontWeight: '700',
+    marginBottom: 10,
+    letterSpacing: -0.5,
   },
   emptySubtext: {
     fontSize: 14,
     color: darkTheme.textSecondary,
     textAlign: 'center',
+    lineHeight: 20,
   },
   footer: {
     padding: 20,
@@ -450,6 +479,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: darkTheme.textSecondary,
+    color: darkTheme.textMuted,
+    fontWeight: '500',
   },
 });
