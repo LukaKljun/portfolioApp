@@ -7,6 +7,7 @@ export const PortfolioProvider = ({ children }) => {
   const [transactions, setTransactions] = useState([]);
   const [monthlyTarget, setMonthlyTarget] = useState(1000);
   const [yearlyTarget, setYearlyTarget] = useState(12000);
+  const [cashBalance, setCashBalance] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Load data from AsyncStorage
@@ -19,6 +20,7 @@ export const PortfolioProvider = ({ children }) => {
       const storedTransactions = await AsyncStorage.getItem('transactions');
       const storedMonthlyTarget = await AsyncStorage.getItem('monthlyTarget');
       const storedYearlyTarget = await AsyncStorage.getItem('yearlyTarget');
+      const storedCashBalance = await AsyncStorage.getItem('cashBalance');
 
       if (storedTransactions) {
         setTransactions(JSON.parse(storedTransactions));
@@ -28,6 +30,9 @@ export const PortfolioProvider = ({ children }) => {
       }
       if (storedYearlyTarget) {
         setYearlyTarget(parseFloat(storedYearlyTarget));
+      }
+      if (storedCashBalance) {
+        setCashBalance(parseFloat(storedCashBalance));
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -139,6 +144,39 @@ export const PortfolioProvider = ({ children }) => {
     return breakdown;
   };
 
+  const updateCashBalance = async (amount) => {
+    try {
+      const newBalance = cashBalance + amount;
+      // Prevent negative balance
+      if (newBalance < 0) {
+        console.warn('Cannot set negative cash balance');
+        return;
+      }
+      await AsyncStorage.setItem('cashBalance', newBalance.toString());
+      setCashBalance(newBalance);
+    } catch (error) {
+      console.error('Error updating cash balance:', error);
+    }
+  };
+
+  const setCashBalanceDirect = async (amount) => {
+    try {
+      // Prevent negative balance
+      if (amount < 0) {
+        console.warn('Cannot set negative cash balance');
+        return;
+      }
+      await AsyncStorage.setItem('cashBalance', amount.toString());
+      setCashBalance(amount);
+    } catch (error) {
+      console.error('Error setting cash balance:', error);
+    }
+  };
+
+  const getTotalPortfolioValue = () => {
+    return getPortfolioValue() + cashBalance;
+  };
+
   return (
     <PortfolioContext.Provider
       value={{
@@ -154,6 +192,10 @@ export const PortfolioProvider = ({ children }) => {
         getMonthlySpending,
         getYearlySpending,
         getAssetBreakdown,
+        cashBalance,
+        updateCashBalance,
+        setCashBalanceDirect,
+        getTotalPortfolioValue,
         loading,
       }}
     >

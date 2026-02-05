@@ -113,6 +113,7 @@ export default function AddTransaction() {
       amount: parseFloat(amount),
       price: parseFloat(price),
       type: 'buy',
+      coinId: selectedAsset?.id, // Save coinId for crypto
     };
 
     await addTransaction(transaction);

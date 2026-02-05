@@ -5,7 +5,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { PortfolioProvider } from './src/context/PortfolioContext';
 import PortfolioDashboard from './src/screens/PortfolioDashboard';
+import Holdings from './src/screens/Holdings';
 import AddTransaction from './src/screens/AddTransaction';
+import CashManager from './src/screens/CashManager';
 import { darkTheme } from './src/utils/theme';
 
 // Suppress the pointerEvents deprecation warning from React Native Web
@@ -85,6 +87,16 @@ export default function App() {
             }}
           />
           <Tab.Screen
+            name="Holdings"
+            component={Holdings}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <TabBarIcon name="📈" color={color} size={size} />
+              ),
+              headerTitle: 'Holdings',
+            }}
+          />
+          <Tab.Screen
             name="Add"
             component={AddTransaction}
             options={{
@@ -92,6 +104,16 @@ export default function App() {
                 <TabBarIcon name="➕" color={color} size={size} />
               ),
               headerTitle: 'Add Transaction',
+            }}
+          />
+          <Tab.Screen
+            name="Cash"
+            component={CashManager}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <TabBarIcon name="💰" color={color} size={size} />
+              ),
+              headerTitle: 'Cash Manager',
             }}
           />
         </Tab.Navigator>
