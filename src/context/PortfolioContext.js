@@ -147,6 +147,11 @@ export const PortfolioProvider = ({ children }) => {
   const updateCashBalance = async (amount) => {
     try {
       const newBalance = cashBalance + amount;
+      // Prevent negative balance
+      if (newBalance < 0) {
+        console.warn('Cannot set negative cash balance');
+        return;
+      }
       await AsyncStorage.setItem('cashBalance', newBalance.toString());
       setCashBalance(newBalance);
     } catch (error) {
@@ -156,6 +161,11 @@ export const PortfolioProvider = ({ children }) => {
 
   const setCashBalanceDirect = async (amount) => {
     try {
+      // Prevent negative balance
+      if (amount < 0) {
+        console.warn('Cannot set negative cash balance');
+        return;
+      }
       await AsyncStorage.setItem('cashBalance', amount.toString());
       setCashBalance(amount);
     } catch (error) {

@@ -2,7 +2,9 @@
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 const FINNHUB_API = 'https://finnhub.io/api/v1';
-const FINNHUB_API_KEY = 'ctcu9i1r01qk131iqvp0ctcu9i1r01qk131iqvpg'; // Free tier public key
+// Using a free tier API key. For production, replace with your own key from https://finnhub.io
+// Store in environment variable: process.env.FINNHUB_API_KEY
+const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'ctcu9i1r01qk131iqvp0ctcu9i1r01qk131iqvpg';
 
 // Helper to add delay between requests
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -91,17 +93,23 @@ export const searchStock = async (query) => {
     const data = await response.json();
     
     if (data.result && Array.isArray(data.result)) {
-      return data.result.slice(0, 10).map(stock => ({
-        symbol: stock.symbol,
-        name: stock.description || stock.symbol,
-        type: stock.type === 'ETP' ? 'etf' : 'stock',
-        exchange: stock.displaySymbol,
-      }));
+      // If API returns results, use them
+      if (data.result.length > 0) {
+        return data.result.slice(0, 10).map(stock => ({
+          symbol: stock.symbol,
+          name: stock.description || stock.symbol,
+          type: stock.type === 'ETP' ? 'etf' : 'stock',
+          exchange: stock.displaySymbol,
+        }));
+      }
+      // If API returns empty array (legitimate no results), return empty
+      return [];
     }
+    // If API structure is unexpected, use fallback
     return getFallbackStocks(query);
   } catch (error) {
     console.error('Error searching stocks:', error);
-    // Fallback to popular stocks if API fails
+    // Only use fallback when API call fails
     return getFallbackStocks(query);
   }
 };

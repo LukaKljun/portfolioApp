@@ -19,8 +19,9 @@ export default function Holdings() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
+    // Only calculate holdings on mount
     calculateHoldings();
-  }, [transactions]);
+  }, []); // Empty dependency array - only run on mount
 
   const calculateHoldings = async (isRefresh = false) => {
     if (isRefresh) {
@@ -52,47 +53,53 @@ export default function Holdings() {
         }
       });
 
-      // Convert to array and fetch current prices
-      const holdingsArray = await Promise.all(
-        Object.values(holdingsMap)
-          .filter(h => h.shares > 0)
-          .map(async (holding) => {
-            try {
-              const currentPrice = await getAssetPrice(
-                holding.assetName,
-                holding.assetType,
-                holding.coinId
-              );
-              
-              const avgCost = holding.totalCost / holding.shares;
-              const currentValue = currentPrice ? holding.shares * currentPrice : holding.totalCost;
-              const gain = currentValue - holding.totalCost;
-              const gainPercent = holding.totalCost > 0 ? (gain / holding.totalCost) * 100 : 0;
+      // Convert to array and fetch current prices with rate limiting
+      const holdingsArray = [];
+      const filteredHoldings = Object.values(holdingsMap).filter(h => h.shares > 0);
+      
+      for (let i = 0; i < filteredHoldings.length; i++) {
+        const holding = filteredHoldings[i];
+        
+        try {
+          // Add delay between requests to avoid rate limits (60/min = 1 per second)
+          if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 1100));
+          }
+          
+          const currentPrice = await getAssetPrice(
+            holding.assetName,
+            holding.assetType,
+            holding.coinId
+          );
+          
+          const avgCost = holding.totalCost / holding.shares;
+          const currentValue = currentPrice ? holding.shares * currentPrice : holding.totalCost;
+          const gain = currentValue - holding.totalCost;
+          const gainPercent = holding.totalCost > 0 ? (gain / holding.totalCost) * 100 : 0;
 
-              return {
-                ...holding,
-                currentPrice: currentPrice || avgCost,
-                avgCost,
-                currentValue,
-                gain,
-                gainPercent,
-                priceLoaded: !!currentPrice,
-              };
-            } catch (error) {
-              console.error(`Error fetching price for ${holding.assetName}:`, error);
-              const avgCost = holding.totalCost / holding.shares;
-              return {
-                ...holding,
-                currentPrice: avgCost,
-                avgCost,
-                currentValue: holding.totalCost,
-                gain: 0,
-                gainPercent: 0,
-                priceLoaded: false,
-              };
-            }
-          })
-      );
+          holdingsArray.push({
+            ...holding,
+            currentPrice: currentPrice || avgCost,
+            avgCost,
+            currentValue,
+            gain,
+            gainPercent,
+            priceLoaded: !!currentPrice,
+          });
+        } catch (error) {
+          console.error(`Error fetching price for ${holding.assetName}:`, error);
+          const avgCost = holding.totalCost / holding.shares;
+          holdingsArray.push({
+            ...holding,
+            currentPrice: avgCost,
+            avgCost,
+            currentValue: holding.totalCost,
+            gain: 0,
+            gainPercent: 0,
+            priceLoaded: false,
+          });
+        }
+      }
 
       // Sort by current value descending
       holdingsArray.sort((a, b) => b.currentValue - a.currentValue);
