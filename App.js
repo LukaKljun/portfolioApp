@@ -1,12 +1,18 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Text } from 'react-native';
+import { Text, LogBox } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { PortfolioProvider } from './src/context/PortfolioContext';
 import PortfolioDashboard from './src/screens/PortfolioDashboard';
 import AddTransaction from './src/screens/AddTransaction';
 import { darkTheme } from './src/utils/theme';
+
+// Suppress the pointerEvents deprecation warning from React Native Web
+// This is a known issue with React Navigation and will be fixed in future versions
+LogBox.ignoreLogs([
+  'props.pointerEvents is deprecated',
+]);
 
 const Tab = createBottomTabNavigator();
 

@@ -31,6 +31,7 @@ A React Native mobile application for tracking your investment portfolio includi
 ## Technology Stack
 
 - **Framework**: React Native with Expo
+- **Web Support**: React Native Web for browser compatibility
 - **Navigation**: React Navigation (Bottom Tabs)
 - **Charts**: react-native-chart-kit
 - **Storage**: AsyncStorage
