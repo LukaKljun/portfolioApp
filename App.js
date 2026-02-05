@@ -33,7 +33,7 @@ export default function App() {
           fonts: {
             regular: {
               fontFamily: 'System',
-              fontWeight: 'normal',
+              fontWeight: '400',
             },
             medium: {
               fontFamily: 'System',
@@ -41,7 +41,7 @@ export default function App() {
             },
             bold: {
               fontFamily: 'System',
-              fontWeight: 'bold',
+              fontWeight: '700',
             },
             heavy: {
               fontFamily: 'System',
