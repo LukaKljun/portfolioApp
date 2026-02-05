@@ -30,6 +30,24 @@ export default function App() {
             border: darkTheme.border,
             notification: darkTheme.secondary,
           },
+          fonts: {
+            regular: {
+              fontFamily: 'System',
+              fontWeight: 'normal',
+            },
+            medium: {
+              fontFamily: 'System',
+              fontWeight: '500',
+            },
+            bold: {
+              fontFamily: 'System',
+              fontWeight: 'bold',
+            },
+            heavy: {
+              fontFamily: 'System',
+              fontWeight: '900',
+            },
+          },
         }}
       >
         <StatusBar style="light" />
